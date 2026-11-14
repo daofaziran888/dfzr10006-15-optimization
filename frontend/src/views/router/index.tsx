@@ -11,7 +11,12 @@ const columns = [
   "灰度标记",
   "降级服务",
   "重试次数",
-  "规则状态"
+  "规则状态",
+  "当前路由",
+  "路由状态",
+  "关联限流",
+  "生效中限流",
+  "最近切换"
 ]
 const actions = [
   "启用规则",
@@ -24,20 +29,6 @@ const statuses = [
   "已降级",
   "已关闭"
 ]
-const stats = [
-  {
-    "label": "路由规则总数",
-    "value": 0
-  },
-  {
-    "label": "生效中规则",
-    "value": 0
-  },
-  {
-    "label": "已降级规则",
-    "value": 0
-  }
-]
 
 type Row = Record<string, string | number | null>
 
@@ -47,6 +38,11 @@ export default function RouterView() {
   const [errorMessage, setErrorMessage] = useState('')
   const [filters, setFilters] = useState<Record<string, string>>({})
   const filterFields = useMemo(() => columns.slice(0, 3), [])
+  const stats = useMemo(() => [
+    { label: "路由规则总数", value: total },
+    { label: "生效中规则", value: rows.filter((row) => row.status === '生效中').length },
+    { label: "已降级规则", value: rows.filter((row) => row.status === '已降级').length },
+  ], [rows, total])
 
   const reload = useCallback(async () => {
     setErrorMessage('')
@@ -73,7 +69,7 @@ export default function RouterView() {
     try {
       const response = await request(`${ENDPOINT}/${row.id}/actions`, {
         method: 'POST',
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ values: { action } }),
       })
       if (!response.ok) {
         throw new Error('查询路由分发动作未生效，请稍后重试')

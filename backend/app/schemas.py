@@ -19,6 +19,7 @@ class ActionResult(BaseModel):
     ok: bool
     message: str
     entry: dict[str, Any] | None = None
+    receipt: dict[str, Any] | None = None
 
 
 class EntryPayload(BaseModel):
@@ -71,11 +72,13 @@ class LimiterEntry(BaseModel):
     field_0: str | None = None  # 规则编号
     field_1: str | None = None  # 限流对象
     field_2: str | None = None  # 限流算法
-    field_3: str | None = None  # 每秒上限
-    field_4: str | None = None  # 突发容量
-    field_5: str | None = None  # 降级动作
-    field_6: str | None = None  # 恢复时间
-    field_7: str | None = None  # 规则状态
+    field_3: str | None = None  # 限流阈值
+    field_4: str | None = None  # 每秒上限
+    field_5: str | None = None  # 突发容量
+    field_6: str | None = None  # 判定口径
+    field_7: str | None = None  # 降级动作
+    field_8: str | None = None  # 恢复时间
+    field_9: str | None = None  # 规则状态
 
 class OrchestraEntry(BaseModel):
     """编排流程明细结构。"""

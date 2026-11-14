@@ -59,3 +59,43 @@ class RouterService:
         entry["pending"] = target != STATUS_ORDER[-1]
         entry["abnormal"] = action in NEGATIVE_ACTIONS
         return entry, f"路由规则已{action}"
+
+    def list_by_code(self, rule_code: str) -> dict[str, Any] | None:
+        for row in store.rows(MODULE):
+            if str(row.get("规则编号") or "").strip() == rule_code:
+                return row
+        return None
+
+    def apply_limiter_decision(
+        self,
+        *,
+        route_code: str,
+        rule_code: str,
+        degraded: bool,
+        at: str | None = None,
+    ) -> dict[str, Any] | None:
+        """接收限流判定结果：降级时切到降级服务，恢复时切回目标服务。
+
+        路由状态只在这里流转，限流服务不直接改路由字段，保证同步口径单一。
+        """
+        route = self.list_by_code(route_code)
+        if route is None:
+            return None
+        target = str(route.get("降级服务") or "").strip() if degraded else str(route.get("目标服务") or "").strip()
+        route["当前路由"] = target
+        route["路由状态"] = "降级" if degraded else "正常"
+        route["关联限流"] = rule_code
+        route["生效中限流"] = rule_code if degraded else ""
+        route["最近切换"] = at
+        current_status = str(route.get("status") or "").strip()
+        if degraded and current_status != "已关闭":
+            route["status"] = "已降级"
+            route["规则状态"] = "已降级"
+            route["abnormal"] = True
+            route["pending"] = False
+        elif not degraded and current_status == "已降级":
+            route["status"] = "生效中"
+            route["规则状态"] = "生效中"
+            route["abnormal"] = False
+            route["pending"] = True
+        return route
